@@ -140,7 +140,7 @@ public class Line {
 	private void cut(int from, int to) {
 		tmp = new StringBuilder();
 		buffer = new StringBuffer();
-
+		//TODO: Check for from or to < 0
 		if (!(from > data.length())) {
 			if (to > data.length())
 				to = data.length();
