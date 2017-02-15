@@ -10,11 +10,12 @@ import java.util.Scanner;
 public class Document {
 
 	private Node head;
-	private int lineNum;
+	private Node bufferHead;
+	private int totalLineNum;
 
 	public Document() {
 		head = new Node();
-		lineNum = 0;
+		totalLineNum = 0;
 	}
 
 	/**
@@ -45,7 +46,7 @@ public class Document {
 			// If the line to insert after is not 0 then retrieve the node at
 			// that position.
 			if (afterLineNum != 0) {
-				cur = getNode(afterLineNum);
+				cur = getNode(afterLineNum, head);
 				if (cur == null)
 					break;
 				System.out.printf("inserting after:\n%s\n", cur.line.getData());
@@ -65,18 +66,18 @@ public class Document {
 					// If the line to insert after is 0 then we are adding to
 					// the head of the list.
 					if (afterLineNum == 0) {
-						System.out.printf("%d:", lineNum + 1);
-						lineNum++;
-						insertTail(in.nextLine());
+						System.out.printf("%d:", totalLineNum + 1);
+						totalLineNum++;
+						insertTail(in.nextLine(), head);
 
 					}
 					// Otherwise we are adding after a node.
 					else {
 						System.out.printf("%d:", afterLineNum + 1);
 						afterLineNum++;
-						lineNum++;
+						totalLineNum++;
 						if (cur != null) {
-							insertAfter(cur.line.getData(), in.nextLine());
+							insertAfter(cur.line.getData(), in.nextLine(), head);
 							cur = cur.next;
 						}
 					}
@@ -101,18 +102,46 @@ public class Document {
 	/**
 	 * removeLine removes a specified line number from the document.
 	 * 
-	 * @param num String index of line to remove
+	 * @param num
+	 *            String index of line to remove
 	 */
-	public void removeLine(String num) {
-		if (!isEmpty()) {
-			int toDelete = Integer.parseInt(num);
-			if (!(toDelete > lineNum)) {
-				removeNode(getNode(toDelete).line.getData());
-				lineNum--;
+	public void removeLine(int num) {
+		if (!isEmpty(head)) {
+			if (!(num > totalLineNum)) {
+				removeNode(getNode(num, head).line.getData(), head);
+				totalLineNum--;
 			}
 		}
 	}
-	
+
+	/**
+	 * removeRange deletes a range of lines starting from start and ending with
+	 * end. Start must be less than or equal to end. Start must be less than or
+	 * equal to the total number of lines in the document.
+	 * 
+	 * @param start
+	 *            Index of the starting line of the deletion.
+	 * @param end
+	 *            Index of the ending line of the deletion.
+	 */
+	public void removeRange(int start, int end) {
+		if (start >= end) {
+			System.out.println("To must be a less than or equal to From.\n");
+		} else if (start >= totalLineNum) {
+			System.out.printf("Line number: %d does not exist\n", start);
+		} else {
+			if (!isEmpty(head)) {
+				if (start == 0)
+					start++;
+				if (end > totalLineNum)
+					end = totalLineNum;
+				while ((start - 1) != end) {
+					removeLine(end--);
+				}
+			}
+		}
+	}
+
 	/**
 	 * writeToFile iterates over each line in the document and outputs it to the
 	 * passed filename.
@@ -153,12 +182,13 @@ public class Document {
 		try {
 			File inFile = new File("./" + filename);
 			Scanner in = new Scanner(inFile);
-			if(lineNum!=0){
-				head.next=null;
-				lineNum=0;
+			if (totalLineNum != 0) {
+				head.next = null;
+				totalLineNum = 0;
 			}
 			while (in.hasNextLine()) {
-				insertTail(in.nextLine());
+				totalLineNum++;
+				insertTail(in.nextLine(), head);
 			}
 			in.close();
 			return true;
@@ -166,6 +196,112 @@ public class Document {
 			System.out.println(filename + " does not exist");
 			return false;
 		}
+	}
+
+	/**
+	 * showLine displays a specified line within the document.
+	 * 
+	 * @param lineNum
+	 *            Index of the line to start displaying.
+	 */
+	public void showLine(int lineNum) {
+		if (lineNum > totalLineNum) {
+			System.out.printf("Line %d does not exist! Total Lines: %d\n\n", lineNum, totalLineNum);
+		} else {
+			if (lineNum == 0)
+				lineNum++;
+			Node current = head.next;
+			for (int i = 1; i < lineNum; i++) {
+				current = current.next;
+			}
+			System.out.printf("%d: %s\n", lineNum, current.line.getData());
+		}
+	}
+
+	/**
+	 * showRange displays a specified range of lines within the document.
+	 * 
+	 * @param start
+	 *            Index of the line to start displaying.
+	 * @param end
+	 *            Index of the line to stop displaying.
+	 */
+	public void showRange(int start, int end) {
+		if (start > end)
+			System.out.println("To must be a larger number than From.\n");
+		else {
+			if (end > totalLineNum)
+				end = totalLineNum;
+			if (start == 0)
+				start++;
+
+			Node current = getNode(start, head);
+
+			if (current != null) {
+				for (int i = start; i <= end; i++) {
+					System.out.printf("%d: %s\n", i, current.line.getData());
+					current = current.next;
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * copyRange copies the specified range of lines into a document buffer
+	 * 
+	 * @param start
+	 *            Index of the first line to copy
+	 * @param end
+	 *            Index of the last line to copy
+	 */
+	public void copyRange(int start, int end) {
+		bufferHead = new Node();
+		Node current = getNode(start, head);
+		while (current != null && start <= end) {
+			insertTail(current.line.getData(), bufferHead);
+			current = current.next;
+			end--;
+		}
+
+	}
+
+	/**
+	 * pasteLines pastes the current document buffer after the specified line.
+	 * 
+	 * @param start
+	 *            Index of the line to paste the document buffer after.
+	 */
+	public void pasteLines(int start) {
+		Node current = getNode(start, head);
+		if (current != null) {
+			Node currentBuffer = bufferHead.next;
+			while (currentBuffer != null && current != null) {
+				Node toAdd = new Node(currentBuffer.line.getData());
+
+				toAdd.prev = current;
+				toAdd.next = current.next;
+				current.next = toAdd;
+				if (current.next != null)
+					current.next.prev = toAdd;
+
+				currentBuffer = currentBuffer.next;
+				current = current.next;
+			}
+		}
+	}
+
+	/**
+	 * editLine starts the edit line menu for the specified line.
+	 * 
+	 * @param in
+	 *            Scanner that retrieves user input.
+	 * @param lineNumber
+	 *            Index of the line to edit
+	 */
+	public void editLine(Scanner in, int lineNumber) {
+		Node current = getNode(lineNumber,head);
+		current.line.lineMenu(in);
 	}
 
 	/**
@@ -187,8 +323,11 @@ public class Document {
 
 	}
 
+	/**
+	 * toString prints out the string representation of the document.
+	 */
 	@Override
-	public String toString(){
+	public String toString() {
 		Node current = head.next;
 		String toReturn = "";
 		int count = 1;
@@ -201,23 +340,25 @@ public class Document {
 
 		return toReturn;
 	}
-	
+
 	/**
 	 * insertHead adds a new node to the head of the list. This represents
 	 * adding a new line to the document.
 	 * 
 	 * @param data
 	 *            The line that is to be added to the document.
+	 * @param curHead
+	 *            Head node of the document to insert into.
 	 */
-	private void insertHead(String data) {
+	private void insertHead(String data, Node curHead) {
 		Node toAdd = new Node(data);
-		if (isEmpty()) {
-			head.next = new Node(data);
-			toAdd.prev = head;
+		if (isEmpty(curHead)) {
+			curHead.next = new Node(data);
+			toAdd.prev = curHead;
 		} else {
-			toAdd.next = head.next;
-			toAdd.prev = head;
-			head.next = toAdd;
+			toAdd.next = curHead.next;
+			toAdd.prev = curHead;
+			curHead.next = toAdd;
 		}
 	}
 
@@ -227,14 +368,16 @@ public class Document {
 	 * 
 	 * @param data
 	 *            The line that is to be added to the document.
+	 * @param curHead
+	 *            Head node of the document to insert into.
 	 */
-	private void insertTail(String data) {
+	private void insertTail(String data, Node curHead) {
 		Node toAdd = new Node(data);
-		if (isEmpty()) {
-			head.next = toAdd;
-			toAdd.prev = head;
+		if (isEmpty(curHead)) {
+			curHead.next = toAdd;
+			toAdd.prev = curHead;
 		} else {
-			Node current = head.next;
+			Node current = curHead.next;
 			while (current.next != null)
 				current = current.next;
 			current.next = toAdd;
@@ -253,14 +396,15 @@ public class Document {
 	 * 
 	 * @param data
 	 *            The line that is to be added to the document.
-	 * 
+	 * @param curHead
+	 *            Head node of the document to insert into.
 	 * @return Boolean flag for success or failure.
 	 */
-	private boolean insertAfter(String target, String data) {
-		if (isEmpty())
+	private boolean insertAfter(String target, String data, Node curHead) {
+		if (isEmpty(curHead))
 			return false;
 
-		Node current = findNode(target);
+		Node current = findNode(target, curHead);
 		if (current == null)
 			return false;
 
@@ -278,17 +422,18 @@ public class Document {
 	 * 
 	 * @param target
 	 *            The line to remove from the document.
-	 * 
+	 * @param curHead
+	 *            Head node of the document to remove from.
 	 * @return Boolean flag for success or failure.
 	 */
-	private boolean removeNode(String target) {
-		Node current = findNode(target);
+	private boolean removeNode(String target, Node curHead) {
+		Node current = findNode(target, curHead);
 
 		if (current == null)
 			return false;
 
 		Node tmp = current.prev;
-		if(current.next != null)
+		if (current.next != null)
 			current.next.prev = tmp;
 		tmp.next = current.next;
 		return true;
@@ -299,10 +444,12 @@ public class Document {
 	 * isEmpty returns true if the document has no lines in it or false if it
 	 * does.
 	 * 
+	 * @param curHead
+	 *            Head node of the document to check if empty.
 	 * @return Boolean flag for empty doc. If true the document is empty.
 	 */
-	private boolean isEmpty() {
-		return head.next == null;
+	private boolean isEmpty(Node curHead) {
+		return curHead.next == null;
 	}
 
 	/**
@@ -310,15 +457,17 @@ public class Document {
 	 * 
 	 * @param nodeNum
 	 *            Index of the node to return.
+	 * @param curHead
+	 *            Head node of the document to retrieve the node from.
 	 * @return
 	 */
-	private Node getNode(int nodeNum) {
-		if (isEmpty())
+	private Node getNode(int nodeNum, Node curHead) {
+		if (isEmpty(curHead))
 			return null;
-		if (nodeNum > lineNum)
+		if (nodeNum > totalLineNum)
 			return null;
 
-		Node cur = head.next;
+		Node cur = curHead.next;
 		for (int i = 1; i < nodeNum; i++) {
 			cur = cur.next;
 		}
@@ -330,13 +479,15 @@ public class Document {
 	 * 
 	 * @param target
 	 *            The string value to find.
+	 * @param curHead
+	 *            Head node of the document to find the node in.
 	 * @return
 	 */
-	private Node findNode(String target) {
-		if (isEmpty())
+	private Node findNode(String target, Node curHead) {
+		if (isEmpty(curHead))
 			return null;
 
-		Node current = head.next;
+		Node current = curHead.next;
 		while (current.next != null && !current.line.getData().equals(target))
 			current = current.next;
 		if (current.line.getData().equals(target))

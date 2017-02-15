@@ -7,9 +7,10 @@ public class Driver {
 	public static void main(String[] args) {
 		Document doc = new Document();
 		Scanner in = new Scanner(System.in);
+		int to, from,lineNum;
 		int sent = 1;
 		String input;
-		
+
 		while (sent == 1) {
 			printDocMenu();
 			String res = in.nextLine();
@@ -18,7 +19,8 @@ public class Driver {
 				break;
 			case "dl":
 				System.out.print("Line Number: ");
-				doc.removeLine(in.nextLine());
+				int num = Integer.parseInt(in.nextLine());
+				doc.removeLine(num);
 				break;
 			case "l":
 				System.out.print("\nFile Name: ");
@@ -26,17 +28,38 @@ public class Driver {
 				doc.loadFile(input);
 				break;
 			case "dr":
+				System.out.print("From: ");
+				from = Integer.parseInt(in.nextLine());
+				System.out.print("To: ");
+				to = Integer.parseInt(in.nextLine());
+				doc.removeRange(from, to);
 				break;
 			case "sa":
 				doc.printDoc();
 				break;
 			case "cr":
+				System.out.print("From: ");
+				from = Integer.parseInt(in.nextLine());
+				System.out.print("To: ");
+				to = Integer.parseInt(in.nextLine());
+				doc.copyRange(from, to);
 				break;
 			case "sl":
+				System.out.print("\nLine Number: ");
+				lineNum = Integer.parseInt(in.nextLine());
+				doc.showLine(lineNum);
 				break;
 			case "pl":
+				System.out.print("Paste after line: ");
+				from = Integer.parseInt(in.nextLine());
+				doc.pasteLines(from);
 				break;
 			case "sr":
+				System.out.print("\nFrom: ");
+				from = Integer.parseInt(in.nextLine());
+				System.out.print("\nTo: ");
+				to = Integer.parseInt(in.nextLine());
+				doc.showRange(from, to);
 				break;
 			case "w":
 				System.out.print("\nFile Name: ");
@@ -51,12 +74,15 @@ public class Driver {
 				in.close();
 				break;
 			case "el":
+				System.out.print("\nLine Number: ");
+				lineNum = Integer.parseInt(in.nextLine());
+				doc.editLine(in,lineNum);
 				break;
 			case "wq":
 				System.out.print("\nFile Name: ");
 				input = in.nextLine();
 				doc.writeToFile(input);
-				System.out.println("Text written to "+input);
+				System.out.println("Text written to " + input);
 				sent = 0;
 				in.close();
 				break;

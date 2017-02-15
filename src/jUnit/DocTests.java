@@ -29,7 +29,7 @@ public class DocTests {
 		Document doc = new Document();
 		doc.loadFile("testFiles/removeLineTest.txt");
 		
-		doc.removeLine("1");
+		doc.removeLine(1);
 		
 		String result = doc.toString();
 		String expected = "";
